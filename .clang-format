@@ -1,0 +1,4 @@
+IndentWidth: 4
+AlignAfterOpenBracket: Align
+PenaltyBreakBeforeFirstCallParameter: 100000000
+SortIncludes: false
