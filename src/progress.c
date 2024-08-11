@@ -1,9 +1,10 @@
 #include <stdio.h>
 #include <math.h>
 
+#include "common.h"
 #include "progress.h"
 
-void progress_start(progress_state_t *in, char *title, size_t total_steps) {
+void progress_init(progress_state_t *in, char *title, size_t total_steps) {
     in->total = (double)total_steps;
     in->buffer[0] = '[';
     for (size_t i = 1; i <= 38; i++) {
@@ -13,41 +14,40 @@ void progress_start(progress_state_t *in, char *title, size_t total_steps) {
     in->buffer[40] = '\x00';
     in->title = title;
     in->progress = 0;
-    in->finalized = 0;
+    in->finalized = false;
+    in->last_chars_to_fill = 0;
 }
 
-void progress_finalize(progress_state_t *in) {
+void progress_final(progress_state_t *in, bool print_newline) {
     if (!in->finalized) {
-        in->finalized = 1;
-        printf("%c", '\n');
+        in->finalized = true;
+        if (print_newline) {
+            errprintf("%c", '\n');
+        }
     }
 }
 
 void progress_update(progress_state_t *in, size_t amount) {
     if (in->finalized)
         return;
-    char should_finalize = 0;
     in->progress += amount;
-    if (in->progress >= in->total) {
-        in->progress = in->total;
-        should_finalize = 1;
-    }
-    size_t equal_signs_to_fill = (size_t)floor((in->progress / in->total) * 38);
-    for (size_t i = 1; i <= equal_signs_to_fill; i++) {
-        if (i < equal_signs_to_fill) {
-            in->buffer[i] = '=';
-        } else {
-            if (should_finalize) {
+
+    size_t chars_to_fill = (size_t)floor((in->progress / in->total) * 38);
+    if (chars_to_fill > in->last_chars_to_fill) {
+        in->last_chars_to_fill = chars_to_fill;
+        for (size_t i = 1; i <= chars_to_fill; i++) {
+            if (i < chars_to_fill) {
                 in->buffer[i] = '=';
             } else {
-                in->buffer[i] = '>';
+                if (in->progress >= in->total) {
+                    in->buffer[i] = '=';
+                } else {
+                    in->buffer[i] = '>';
+                }
             }
         }
-    }
-    printf("%s%s %zu%%\r", in->title, in->buffer,
-           (size_t)floor((in->progress / in->total) * 100));
-    fflush(stdout);
-    if (should_finalize) {
-        progress_finalize(in);
+        errprintf("%s%s %zu%%\r", in->title, in->buffer,
+               (size_t)floor((in->progress / in->total) * 100));
+        fflush(stderr);
     }
 }

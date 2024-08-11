@@ -9,8 +9,9 @@
 
 #include "hash.h"
 
-cng_hash_algorithm_t cng_hash_get_algorithm(
-    const wchar_t *algorithm_id, const wchar_t *provider, bool reusable) {
+cng_hash_algorithm_t cng_hash_get_algorithm(const wchar_t *algorithm_id,
+                                            const wchar_t *provider,
+                                            bool reusable) {
     cng_hash_algorithm_t alg = {
         .handle = NULL,
         .result = STATUS_SUCCESS,
@@ -66,12 +67,24 @@ cng_hash_object_t cng_hash_new(cng_hash_algorithm_t *algorithm) {
 }
 
 NTSTATUS cng_hash_update(cng_hash_object_t *hash_obj, void *data,
-                                       unsigned long length) {
+                         unsigned long length) {
     return BCryptHashData(hash_obj->handle, (PUCHAR)data, length, 0);
 }
 
-NTSTATUS cng_hash_final(cng_hash_object_t *hash_obj,
-                                      void *output) {
+NTSTATUS cng_hash_final(cng_hash_object_t *hash_obj, void *output) {
     return BCryptFinishHash(hash_obj->handle, (PUCHAR)output,
                             hash_obj->output_size, 0);
+}
+
+void cng_hash_free_hash_object(cng_hash_object_t *hash_obj) {
+    if (hash_obj->hash_obj != NULL) {
+        HeapFree(GetProcessHeap(), 0, hash_obj->hash_obj);
+        hash_obj->hash_obj = NULL;
+    }
+}
+void cng_hash_free_hash_algorithm(cng_hash_algorithm_t *algorithm) {
+    if (algorithm->handle != NULL) {
+        BCryptCloseAlgorithmProvider(algorithm->handle, 0);
+        algorithm->handle = NULL;
+    }
 }

@@ -29,4 +29,8 @@ NTSTATUS cng_hash_update(cng_hash_object_t *hash_obj, void *data,
                                        unsigned long length);
 NTSTATUS cng_hash_final(cng_hash_object_t *hash_obj,
                                       void *output);
+
+void cng_hash_free_hash_object(cng_hash_object_t *hash_obj);
+void cng_hash_free_hash_algorithm(cng_hash_algorithm_t *algorithm);
+
 #endif
